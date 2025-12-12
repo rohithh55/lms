@@ -1,14 +1,24 @@
 #!/bin/bash
 set -e
-echo "Starting application with PM2"
-cd /home/ec2-user/lms-app || { echo "Target dir missing"; exit 1; }
+APP_DIR=/home/ec2-user/lms-app   # change if your appspec deploys to a different path
+APP_NAME=lms-api
 
-# ensure pm2 exists; install globally if needed
-if ! command -v pm2 >/dev/null 2>&1; then
-  echo "pm2 not found - installing globally"
-  sudo npm install -g pm2
+cd "$APP_DIR" || { echo "Missing $APP_DIR"; exit 1; }
+
+# Ensure build exists: if not try to build (useful for CodeDeploy when artifacts may not include node_modules)
+if [ ! -f build/index.js ]; then
+  echo "build/index.js not found, attempting npm ci && npm run build"
+  npm ci --unsafe-perm
+  npm run build
 fi
 
-# Start or restart the app. Replace app.js if your entry is different.
-pm2 describe lms >/dev/null 2>&1 && pm2 restart lms || pm2 start app.js --name lms
+# Restart app via pm2 using the no-migrate script (if package.json has start:nomigrate)
+pm2 delete "$APP_NAME" || true
+if grep -q "\"start:nomigrate\"" package.json; then
+  pm2 start npm --name "$APP_NAME" -- run start:nomigrate
+else
+  # fallback: start built file directly
+  pm2 start build/index.js --name "$APP_NAME"
+fi
+
 pm2 save
