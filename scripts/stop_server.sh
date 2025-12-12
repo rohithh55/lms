@@ -1,4 +1,4 @@
-#!/bin/bash
+ #!/bin/bash
 set -e
 echo "Stopping PM2 app if running"
 # pm2 may be installed at /usr/bin/pm2; try both
