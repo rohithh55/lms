@@ -7,6 +7,7 @@
   "scripts": {
     "lint": "eslint src/",
     "start": "prisma migrate deploy && node build/index.js",
+    "start:nomigrate": "node build/index.js"
     "build": "tsc",
     "dev": "ts-node-dev --respawn --pretty --transpile-only --exit-child src/index.ts",
     "test": "echo \"Error: no test specified\"",
