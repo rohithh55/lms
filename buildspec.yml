@@ -1,0 +1,29 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing dependencies..."
+      - npm ci
+  pre_build:
+    commands:
+      - echo "Running tests (optional)..."
+      - npm test || echo "Tests failed (continuing). Change if you want fail on test."
+  build:
+    commands:
+      - echo "Build step (if any)..."
+      - npm run build || echo "No build step or build output in repo root"
+  post_build:
+    commands:
+      - echo "Packaging deploy artifact..."
+      - mkdir -p codedeploy_pkg
+      - rsync -av --exclude '.git' --exclude 'node_modules' ./ codedeploy_pkg/
+      - cp -r node_modules codedeploy_pkg/ || true
+      - cp ../appspec.yml codedeploy_pkg/ || true  # ensure appspec is present (if build runs in subdir)
+      - cd codedeploy_pkg
+      - zip -r ../app.zip .
+artifacts:
+  files:
+    - app.zip
